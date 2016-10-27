@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <errno.h>
 
 void main () {
 	int pipefd[2];
@@ -15,13 +16,18 @@ void main () {
 			exit (2);
 		default : break;
 		case 0 :
-			close (pipefd [0]);
+			if (-1 == close (pipefd [0]) {
+				perror("close() failed: ");
+				exit(-1);
+			}
 			if (dup2 (pipefd [1], 1) != 1) {
-				fprintf (stderr, "dup of ls stdout failed\n");
+				fprintf (stderr, "dup2 of ls stdout failed\n");
 				exit (3);
 			}
-			execl ("/bin/ls", "ls", "-l", NULL);
-			fprintf (stderr, "ls execl failed\n");
+			execl ("/bin/ls", "ls", "-l", (char*)NULL);
+			fprintf (stderr, "ls execl failed.\n");
+			/* Instead, do this */
+			perror("ls execl failed: "); // Will print the english description of errno - set by the system call
 			exit (4);
 	}
 	switch (fork ()) {
@@ -35,7 +41,7 @@ void main () {
 				fprintf (stderr, "dup of wc stdin failed\n");
 				exit (6);
 			}
-			execl ("/usr/bin/wc", "wc", NULL);
+			execl ("/usr/bin/wc", "wc", (char*)NULL);
 			fprintf (stderr, "wc execl faile\n");
 			exit (6);
 	}
